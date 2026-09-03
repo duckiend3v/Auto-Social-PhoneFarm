@@ -114,6 +114,43 @@ try:
 except Exception:
     pass
 
+# Neu tren may moi clone ve chua he co ADB, tu dong tai ban platform-tools chuan tu Google
+try:
+    _has_any_adb = any(
+        (p / "adb.exe").exists()
+        for p in (
+            ROOT_DIR / "tools",
+            ROOT_DIR / "tools" / "platform-tools",
+            MEI_DIR / "tools" / "platform-tools",
+            Path(r"C:\TLCHelper\sdk\platform-tools"),
+        )
+    )
+    if not _has_any_adb:
+        import urllib.request
+        import zipfile
+        _pt_dir = ROOT_DIR / "tools" / "platform-tools"
+        _pt_dir.mkdir(parents=True, exist_ok=True)
+        _zip_path = ROOT_DIR / "tools" / "platform-tools.zip"
+        urllib.request.urlretrieve("https://dl.google.com/android/repository/platform-tools-latest-windows.zip", _zip_path)
+        with zipfile.ZipFile(_zip_path, "r") as _zf:
+            for _member in _zf.infolist():
+                _fn = _member.filename.replace("platform-tools/", "").replace("platform-tools\\", "")
+                if not _fn:
+                    continue
+                _dst = _pt_dir / _fn
+                if _member.is_dir():
+                    _dst.mkdir(parents=True, exist_ok=True)
+                else:
+                    _dst.parent.mkdir(parents=True, exist_ok=True)
+                    with _zf.open(_member) as _src, open(_dst, "wb") as _fdst:
+                        shutil.copyfileobj(_src, _fdst)
+        try:
+            _zip_path.unlink()
+        except Exception:
+            pass
+except Exception:
+    pass
+
 # Tu dong nap cac thu muc chua adb.exe vao PATH va ADBUTILS_ADB_PATH
 for _pdir in (
     ROOT_DIR / "tools",

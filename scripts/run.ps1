@@ -44,6 +44,12 @@ if (Test-Path "C:\TLCHelper\sdk\platform-tools\adb.exe") {
 	Copy-Item -Path "C:\TLCHelper\sdk\platform-tools\*" -Destination "tools\platform-tools" -Recurse -Force -ErrorAction SilentlyContinue
 }
 
+$HasAdb = (Test-Path "tools\adb.exe") -or (Test-Path "tools\platform-tools\adb.exe") -or (Test-Path "C:\TLCHelper\sdk\platform-tools\adb.exe")
+if (-not $HasAdb) {
+	Write-Host "Chưa có ADB trên máy này, đang tự động tải và cài đặt platform-tools..."
+	& "$PSScriptRoot\bootstrap.ps1"
+}
+
 $BundledAdbDir = Join-Path $PWD "tools\platform-tools"
 if (Test-Path (Join-Path $PWD "tools\adb.exe")) {
 	$env:PATH = (Join-Path $PWD "tools") + [System.IO.Path]::PathSeparator + $env:PATH

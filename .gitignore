@@ -43,10 +43,15 @@ develop-eggs/
 *.pkg
 
 # ==============================================================================
-# Downloaded 3rd-party Tools (Được tải tự động khi chạy bootstrap)
+# Downloaded 3rd-party Tools
 # ==============================================================================
-tools/platform-tools/
+# tools/platform-tools/ -> Đã mở để có thể push ADB chuẩn lên Git (dưới 10MB)
+!tools/platform-tools/
+!tools/platform-tools/**
+!tools/adb.exe
+!tools/*.dll
 tools/scrcpy/
+
 
 # ==============================================================================
 # User Data, Logs & Sensitive Profiles (Dữ liệu tài khoản, thiết bị, proxy, ảnh)
