@@ -105,8 +105,24 @@ function Install-Scrcpy {
 
 function Install-AdbPlatformTools {
     $adbExe = Join-Path $PWD "tools\platform-tools\adb.exe"
-    if (Test-Path $adbExe) {
-        Write-Host "adb already exists: $adbExe"
+    $adbExeRoot = Join-Path $PWD "tools\adb.exe"
+
+    # 1. Neu may co san TLCHelper thi luon dong bo tu TLCHelper de tuong thich toi da voi dan may
+    if (Test-Path "C:\TLCHelper\sdk\platform-tools\adb.exe") {
+        Write-Host "Phat hien ban ADB chuan tu C:\TLCHelper, dang dong bo..."
+        $toolsDir = Join-Path $PWD "tools"
+        $platformToolsDir = Join-Path $toolsDir "platform-tools"
+        New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null
+        New-Item -ItemType Directory -Force -Path $platformToolsDir | Out-Null
+        Copy-Item -Path "C:\TLCHelper\sdk\platform-tools\*" -Destination $toolsDir -Recurse -Force -ErrorAction SilentlyContinue
+        Copy-Item -Path "C:\TLCHelper\sdk\platform-tools\*" -Destination $platformToolsDir -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "-> Da dong bo xong ban ADB tu TLCHelper!"
+        return
+    }
+
+    # 2. Neu da co san adb.exe (do git clone ve hoac da co san trong repo), GIU NGUYEN KHONG GHI DE
+    if ((Test-Path $adbExe) -or (Test-Path $adbExeRoot)) {
+        Write-Host "adb already exists: $adbExe (Giu nguyen ban ADB hien tai, khong ghi de)"
         return
     }
 
