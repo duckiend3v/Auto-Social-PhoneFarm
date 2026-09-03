@@ -93,17 +93,62 @@ SCRCPY_DIR = ROOT_DIR / "tools" / "scrcpy"
 if not SCRCPY_DIR.exists() and (MEI_DIR / "tools" / "scrcpy").exists():
     SCRCPY_DIR = MEI_DIR / "tools" / "scrcpy"
 
-# Tự động nạp thư mục platform-tools chứa adb.exe vào PATH
-for _pdir in (ROOT_DIR / "tools" / "platform-tools", MEI_DIR / "tools" / "platform-tools"):
-    if _pdir.exists() and str(_pdir) not in os.environ.get("PATH", ""):
-        os.environ["PATH"] = f"{_pdir};{os.environ.get('PATH', '')}"
+# Tu dong dong bo ADB chuan tu C:\TLCHelper neu co
+try:
+    _tlc_dir = Path(r"C:\TLCHelper\sdk\platform-tools")
+    if _tlc_dir.exists():
+        _tools_dir = ROOT_DIR / "tools"
+        _tools_dir.mkdir(parents=True, exist_ok=True)
+        _pt_dir = _tools_dir / "platform-tools"
+        _pt_dir.mkdir(parents=True, exist_ok=True)
+        for _fname in ("adb.exe", "AdbWinApi.dll", "AdbWinUsbApi.dll"):
+            _src_f = _tlc_dir / _fname
+            if _src_f.exists():
+                for _target_d in (_tools_dir, _pt_dir):
+                    _dst_f = _target_d / _fname
+                    try:
+                        if not _dst_f.exists() or _dst_f.stat().st_size != _src_f.stat().st_size:
+                            shutil.copy2(_src_f, _dst_f)
+                    except Exception:
+                        pass
+except Exception:
+    pass
+
+# Tu dong nap cac thu muc chua adb.exe vao PATH va ADBUTILS_ADB_PATH
+for _pdir in (
+    ROOT_DIR / "tools",
+    ROOT_DIR / "tools" / "platform-tools",
+    MEI_DIR / "tools",
+    MEI_DIR / "tools" / "platform-tools",
+    Path(r"C:\TLCHelper\sdk\platform-tools"),
+):
+    if _pdir.exists():
+        _bundled_adb = _pdir / ("adb.exe" if os.name == "nt" else "adb")
+        if _bundled_adb.exists() and "ADBUTILS_ADB_PATH" not in os.environ:
+            os.environ["ADBUTILS_ADB_PATH"] = str(_bundled_adb)
+            os.environ["ADB"] = str(_bundled_adb)
+        if str(_pdir) not in os.environ.get("PATH", ""):
+            os.environ["PATH"] = f"{_pdir};{os.environ.get('PATH', '')}"
 
 
 def _tool_path(name: str) -> str:
+    exe_name = f"{name}.exe" if os.name == "nt" else name
+    candidates = [
+        ROOT_DIR / "tools" / exe_name,
+        ROOT_DIR / "tools" / "platform-tools" / exe_name,
+        MEI_DIR / "tools" / exe_name,
+        MEI_DIR / "tools" / "platform-tools" / exe_name,
+        Path(r"C:\TLCHelper\sdk\platform-tools") / exe_name,
+    ]
+    for p in candidates:
+        if p.exists():
+            return str(p)
     path = shutil.which(name)
     if not path:
         raise AdbError(f"Không tìm thấy '{name}' trong PATH.")
     return path
+
+
 
 
 def _common_scrcpy_paths() -> list[Path]:
@@ -276,6 +321,8 @@ def list_devices() -> list[DeviceInfo]:
     except Exception:
         try:
             adb_bin = _tool_path("adb")
+            subprocess.run([adb_bin, "kill-server"], capture_output=True, timeout=5, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
+            time.sleep(0.5)
             subprocess.run([adb_bin, "start-server"], capture_output=True, timeout=5, creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
             time.sleep(0.8)
             output = _adb("devices", "-l", timeout=15)

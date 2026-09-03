@@ -36,8 +36,19 @@ if (Test-Path ".venv\Scripts\python.exe") {
 	throw "Không tìm thấy Python trong môi trường ảo. Hãy chạy bootstrap.ps1 trước."
 }
 
+# Tu dong khoi phuc ADB chuan tu TLCHelper neu co
+if (Test-Path "C:\TLCHelper\sdk\platform-tools\adb.exe") {
+	if (-not (Test-Path "tools")) { New-Item -ItemType Directory -Path "tools" | Out-Null }
+	if (-not (Test-Path "tools\platform-tools")) { New-Item -ItemType Directory -Path "tools\platform-tools" | Out-Null }
+	Copy-Item -Path "C:\TLCHelper\sdk\platform-tools\*" -Destination "tools" -Recurse -Force -ErrorAction SilentlyContinue
+	Copy-Item -Path "C:\TLCHelper\sdk\platform-tools\*" -Destination "tools\platform-tools" -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 $BundledAdbDir = Join-Path $PWD "tools\platform-tools"
-if (Test-Path (Join-Path $BundledAdbDir "adb.exe")) {
+if (Test-Path (Join-Path $PWD "tools\adb.exe")) {
+	$env:PATH = (Join-Path $PWD "tools") + [System.IO.Path]::PathSeparator + $env:PATH
+	$env:ADB = Join-Path $PWD "tools\adb.exe"
+} elseif (Test-Path (Join-Path $BundledAdbDir "adb.exe")) {
 	$env:PATH = $BundledAdbDir + [System.IO.Path]::PathSeparator + $env:PATH
 	$env:ADB = Join-Path $BundledAdbDir "adb.exe"
 }
